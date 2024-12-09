@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">SamsungHealth Exporter</string>
+    <string name="export">Export</string>
+    <string name="export_msg">Click the "Export" button to export the latest data in your phone into the database</string>
+    <string name="exporting">Exporting…</string>
+    <string name="export_failed">Export failed</string>
+    <string name="no_export">There\'s no SamsungHealth export in this device</string>
+</resources>
