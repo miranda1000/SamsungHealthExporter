@@ -1,5 +1,7 @@
 package com.miranda1000.samsunghealthexporter.database;
 
+import android.util.Log;
+
 import com.miranda1000.samsunghealthexporter.NotImplementedException;
 import com.miranda1000.samsunghealthexporter.entities.*;
 
@@ -10,6 +12,8 @@ import java.time.Instant;
 import java.util.Arrays;
 
 public class SamsungHealthMySQLDatabase implements SamsungHealthDatabase {
+    private final String LOG_PREFIX = "SamsungHealthMySQLDatabase";
+
     private final String ddbb_ip;
     private final int ddbb_port;
     private final String ddbb_username;
@@ -32,7 +36,7 @@ public class SamsungHealthMySQLDatabase implements SamsungHealthDatabase {
 
     public void connect() throws Exception {
         Class.forName("com.mysql.jdbc.Driver");
-        String url = "jdbc:mysql://" + this.ddbb_ip + ":" + this.ddbb_port + "/" + this.ddbb_name;
+        String url = "jdbc:mysql://" + this.ddbb_ip + ":" + this.ddbb_port + "/" + this.ddbb_name + "?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=CONVERT_TO_NULL&serverTimezone=GMT";
         this.ddbb_connection = DriverManager.getConnection(url, this.ddbb_username, this.usernamePassword);
     }
 
@@ -41,12 +45,17 @@ public class SamsungHealthMySQLDatabase implements SamsungHealthDatabase {
     }
 
     @Override
-    public boolean canConnect() throws Exception {
-        if (!this.isConnected()) {
-            this.connect();
-        }
+    public boolean canConnect() {
+        try {
+            if (!this.isConnected()) {
+                this.connect();
+            }
 
-        return this.isConnected();
+            return this.isConnected();
+        } catch (Exception ex) {
+            Log.w(LOG_PREFIX, "Cannot connect to database", ex);
+            return false;
+        }
     }
 
     public void createBreathRateTable() throws Exception {
@@ -88,6 +97,8 @@ public class SamsungHealthMySQLDatabase implements SamsungHealthDatabase {
                     .filter(hr -> hr.getTime().compareTo(maxInsertedTimestamp) > 0)
                     .toArray(HeartRate[]::new);
         }
+
+        Log.i(LOG_PREFIX, "Exporting heart rate info... (" + heartRates.length + " entries)");
 
         String insert_query = "INSERT INTO HeartRate(time, BPM, RRI, rMSSD, SDNN) VALUES (?,?,?,?,?)";
         PreparedStatement statement = this.ddbb_connection.prepareStatement(insert_query);

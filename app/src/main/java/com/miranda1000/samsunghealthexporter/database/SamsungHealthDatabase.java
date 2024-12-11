@@ -9,5 +9,5 @@ public interface SamsungHealthDatabase {
     void exportSleepStage(SleepStage []sleepStages) throws Exception;
     void exportTemperature(Temperature []temperatures) throws Exception;
 
-    boolean canConnect() throws Exception;
+    boolean canConnect();
 }

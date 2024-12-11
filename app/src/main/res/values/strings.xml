@@ -5,4 +5,5 @@
     <string name="exporting">Exporting…</string>
     <string name="export_failed">Export failed</string>
     <string name="no_export">There\'s no SamsungHealth export in this device</string>
+    <string name="ddbb_connection_failed">Couldn\'t connect to the provided database</string>
 </resources>
