@@ -77,10 +77,12 @@ public class SamsungHealthDiskSystem {
     }
 
     public com.miranda1000.samsunghealthexporter.entities.HeartRate []extractHeartRate(@NonNull DocumentFile samsungHealth) {
-        return this.samsungHealthJsonParser.parseHeartRate(
-                this.getHeartRateParsedFiles(samsungHealth),
-                this.getHeartRateAndRRIntervalParsedFiles(samsungHealth),
-                this.getHeartRateVariation(samsungHealth)
+        return this.samsungHealthJsonParser.sortByTime(
+                this.samsungHealthJsonParser.parseHeartRate(
+                        this.getHeartRateParsedFiles(samsungHealth),
+                        this.getHeartRateAndRRIntervalParsedFiles(samsungHealth),
+                        this.getHeartRateVariation(samsungHealth)
+                )
         );
     }
 

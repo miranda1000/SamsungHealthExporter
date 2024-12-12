@@ -36,7 +36,7 @@ public class SamsungHealthMySQLDatabase implements SamsungHealthDatabase {
 
     public void connect() throws Exception {
         Class.forName("com.mysql.jdbc.Driver");
-        String url = "jdbc:mysql://" + this.ddbb_ip + ":" + this.ddbb_port + "/" + this.ddbb_name + "?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=CONVERT_TO_NULL&serverTimezone=GMT";
+        String url = "jdbc:mysql://" + this.ddbb_ip + ":" + this.ddbb_port + "/" + this.ddbb_name + "?useSSL=false";
         this.ddbb_connection = DriverManager.getConnection(url, this.ddbb_username, this.usernamePassword);
     }
 

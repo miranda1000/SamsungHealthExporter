@@ -65,10 +65,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        if (!this.samsungHealthDatabase.canConnect()) {
-            // failed to connect to the database
-            label.setText(R.string.ddbb_connection_failed);
-        }
+        new Thread(() -> {
+            if (!this.samsungHealthDatabase.canConnect()) {
+                // failed to connect to the database
+                runOnUiThread(() -> {
+                    label.setText(R.string.ddbb_connection_failed);
+                });
+            }
+        }).start();
     }
 
     @Override
@@ -90,9 +94,13 @@ public class MainActivity extends AppCompatActivity {
                     label.setText(R.string.no_export);
                 }
                 else {
-                    if (this.exportInformation(latestExport)) {
-                        label.setText(R.string.export_msg);
-                    }
+                    new Thread(() -> {
+                        if (this.exportInformation(latestExport)) {
+                            runOnUiThread(() -> {
+                                label.setText(R.string.export_msg);
+                            });
+                        }
+                    }).start();
                 }
             }
         }
@@ -105,9 +113,11 @@ public class MainActivity extends AppCompatActivity {
             return true;
         } catch (Exception ex) {
             // something went wrong; notify
-            final TextView label = findViewById(R.id.label);
-            label.setText("EXCEPTION: " + ex.getMessage() + "\n" + Arrays.toString(ex.getStackTrace()));
-            Log.e("SamsungHealthMainActivity", "Exception while exporting", ex);
+            runOnUiThread(() -> {
+                final TextView label = findViewById(R.id.label);
+                label.setText("EXCEPTION: " + ex.getMessage() + "\n" + Arrays.toString(ex.getStackTrace()));
+                Log.e("SamsungHealthMainActivity", "Exception while exporting", ex);
+            });
             return false;
         }
     }
