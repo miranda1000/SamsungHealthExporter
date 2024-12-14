@@ -3,7 +3,6 @@ package com.miranda1000.samsunghealthexporter;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -12,7 +11,6 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -22,6 +20,7 @@ import androidx.documentfile.provider.DocumentFile;
 import com.miranda1000.samsunghealthexporter.database.SamsungHealthDatabase;
 import com.miranda1000.samsunghealthexporter.database.SamsungHealthMySQLDatabase;
 import com.miranda1000.samsunghealthexporter.entities.HeartRate;
+import com.miranda1000.samsunghealthexporter.entities.SleepStage;
 
 import java.util.Arrays;
 
@@ -110,6 +109,10 @@ public class MainActivity extends AppCompatActivity {
         try {
             HeartRate[] extractHeartRate = this.samsungHealthDiskSystem.extractHeartRate(latestExport);
             this.samsungHealthDatabase.exportHeartRate(extractHeartRate);
+
+            SleepStage[] extractSleepStage = this.samsungHealthDiskSystem.extractSleepStage(latestExport);
+            this.samsungHealthDatabase.exportSleepStage(extractSleepStage);
+
             return true;
         } catch (Exception ex) {
             // something went wrong; notify

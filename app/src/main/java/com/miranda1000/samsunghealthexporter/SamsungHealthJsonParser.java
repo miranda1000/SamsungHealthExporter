@@ -2,6 +2,8 @@ package com.miranda1000.samsunghealthexporter;
 
 import com.miranda1000.samsunghealthexporter.entities.BreathRate;
 import com.miranda1000.samsunghealthexporter.entities.SamsungHealthData;
+import com.miranda1000.samsunghealthexporter.entities.SleepPhase;
+import com.miranda1000.samsunghealthexporter.entities.SleepStage;
 import com.miranda1000.samsunghealthexporter.entities.Temperature;
 import com.miranda1000.samsunghealthexporter.jsons.HeartRateAndRRInterval;
 import com.miranda1000.samsunghealthexporter.jsons.HeartRateVariation;
@@ -140,6 +142,46 @@ public class SamsungHealthJsonParser {
         }
 
         return r;
+    }
+
+    public com.miranda1000.samsunghealthexporter.entities.SleepStage []parseSleepStage(com.miranda1000.samsunghealthexporter.jsons.SleepStage []sleepStages) throws IllegalArgumentException {
+        final long AWAKE_MARGIN = 5*60;
+        List<com.miranda1000.samsunghealthexporter.entities.SleepStage> r = new ArrayList<>(sleepStages.length);
+
+        if (sleepStages.length > 0) {
+            Arrays.sort(sleepStages); // as we're linearly checking times, it has to be sorted
+
+            for (int n = 0; n < sleepStages.length; n++) {
+                r.add(new com.miranda1000.samsunghealthexporter.entities.SleepStage(
+                        sleepStages[n].getStartTime(),
+                        SleepPhase.getFromValue(sleepStages[n].stage)
+                ));
+
+                if (n+1 < sleepStages.length) {
+                    // is the next sleep very off to the current one? maybe they were awake
+                    long differenceBetweenPhases = sleepStages[n+1].getStartTime().getEpochSecond() - sleepStages[n].getEndTime().getEpochSecond();
+                    if (differenceBetweenPhases >= AWAKE_MARGIN) {
+                        // too much difference; there need to be a awake stage in the middle
+                        r.add(new SleepStage(
+                                sleepStages[n].getEndTime(),
+                                SleepPhase.AWAKE
+                        ));
+                    }
+                }
+            }
+
+            // we still have to check the last value
+            if (SleepPhase.getFromValue(sleepStages[sleepStages.length-1].stage) != SleepPhase.AWAKE) {
+                // last stage got was not awake, so we have to add it
+                r.add(new SleepStage(
+                        sleepStages[sleepStages.length-1].getEndTime(),
+                        SleepPhase.AWAKE
+                ));
+            }
+        }
+
+
+        return r.stream().toArray(com.miranda1000.samsunghealthexporter.entities.SleepStage[]::new);
     }
 
     public <T extends SamsungHealthData> T []sortByTime(T []data) {

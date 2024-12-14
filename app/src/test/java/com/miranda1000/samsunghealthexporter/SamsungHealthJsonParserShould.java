@@ -1,6 +1,8 @@
 package com.miranda1000.samsunghealthexporter;
 
 import com.google.gson.Gson;
+import com.miranda1000.samsunghealthexporter.entities.SleepPhase;
+import com.miranda1000.samsunghealthexporter.entities.SleepStage;
 import com.miranda1000.samsunghealthexporter.jsons.HeartRateVariation;
 import org.junit.Test;
 
@@ -108,5 +110,36 @@ public class SamsungHealthJsonParserShould {
 
         assertEquals(1, parsedHeartRates.length);
         assertEquals((Float) 68.0f, parsedHeartRates[0].getBPM());
+    }
+
+    @Test
+    public void parseSleepStageCsv() {
+        assert false;
+    }
+
+    @Test
+    public void forceAwakeSleepStageIfNoNextStage() {
+        final com.miranda1000.samsunghealthexporter.jsons.SleepStage []sleepStages =
+                new com.miranda1000.samsunghealthexporter.jsons.SleepStage[] {
+                    new com.miranda1000.samsunghealthexporter.jsons.SleepStage("2024-12-01 01:00:00.000", "2024-12-01 01:05:00.000", 40002), // light sleep
+                        // awake (omitted)
+                        new com.miranda1000.samsunghealthexporter.jsons.SleepStage("2024-12-02 01:00:00.000", "2024-12-02 01:05:00.000", 40002), // light sleep
+                        new com.miranda1000.samsunghealthexporter.jsons.SleepStage("2024-12-02 01:05:00.000", "2024-12-02 01:05:30.000", 40003) // heavy sleep
+                        // awake (omitted)
+                };
+
+        SamsungHealthJsonParser uut = new SamsungHealthJsonParser();
+        com.miranda1000.samsunghealthexporter.entities.SleepStage []parsedSleepStages = uut.parseSleepStage(sleepStages);
+
+        assertEquals(5, parsedSleepStages.length);
+        assertEquals(SleepPhase.LIGHT, parsedSleepStages[0].getSleepPhase());
+        assertEquals(SleepPhase.AWAKE, parsedSleepStages[1].getSleepPhase());
+        assertEquals("Expected omitted sleep time to be equal to the ending of the last time",
+                Instant.parse("2024-12-01T01:05:00.00Z"), parsedSleepStages[1].getTime());
+        assertEquals(SleepPhase.LIGHT, parsedSleepStages[2].getSleepPhase());
+        assertEquals(SleepPhase.HEAVY, parsedSleepStages[3].getSleepPhase());
+        assertEquals(SleepPhase.AWAKE, parsedSleepStages[4].getSleepPhase());
+        assertEquals("Expected omitted sleep time to be equal to the ending of the last time",
+                Instant.parse("2024-12-02T01:05:30.00Z"), parsedSleepStages[4].getTime());
     }
 }

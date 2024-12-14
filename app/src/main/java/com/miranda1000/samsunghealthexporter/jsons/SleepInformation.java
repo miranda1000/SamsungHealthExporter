@@ -29,4 +29,11 @@ public class SleepInformation {
      * UTC+0 time in format YYYY-MM-DD HH:MM:SS.mmm
      */
     public Instant end_time;
+
+    public SleepInformation(float mental_recovery, float physical_recovery, Instant start_time, Instant end_time) {
+        this.mental_recovery = mental_recovery;
+        this.physical_recovery = physical_recovery;
+        this.start_time = start_time;
+        this.end_time = end_time;
+    }
 }

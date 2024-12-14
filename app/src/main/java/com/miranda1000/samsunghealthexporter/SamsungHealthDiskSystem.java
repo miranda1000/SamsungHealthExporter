@@ -3,7 +3,6 @@ package com.miranda1000.samsunghealthexporter;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.net.Uri;
-import android.os.Environment;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -11,7 +10,9 @@ import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 
 import com.google.gson.Gson;
-import com.miranda1000.samsunghealthexporter.entities.SamsungHealthData;
+import com.miranda1000.samsunghealthexporter.csv_parser.SamsungCsvParser;
+import com.miranda1000.samsunghealthexporter.csv_parser.SleepStageCsvParser;
+import com.miranda1000.samsunghealthexporter.entities.SleepStage;
 import com.miranda1000.samsunghealthexporter.jsons.HeartRateAndRRInterval;
 import com.miranda1000.samsunghealthexporter.jsons.HeartRateVariation;
 
@@ -81,8 +82,15 @@ public class SamsungHealthDiskSystem {
                 this.samsungHealthJsonParser.parseHeartRate(
                         this.getHeartRateParsedFiles(samsungHealth),
                         this.getHeartRateAndRRIntervalParsedFiles(samsungHealth),
-                        this.getHeartRateVariation(samsungHealth)
+                        this.getHeartRateVariationParsedFiles(samsungHealth)
                 )
+        );
+    }
+
+    public SleepStage []extractSleepStage(@NonNull DocumentFile samsungHealth) {
+        // already sorted
+        return this.samsungHealthJsonParser.parseSleepStage(
+                this.getSleepStageParsedFiles(samsungHealth)
         );
     }
 
@@ -137,6 +145,34 @@ public class SamsungHealthDiskSystem {
         }
     }
 
+    protected <T> T []parseCsvFile(DocumentFile file, SamsungCsvParser<T> parser) {
+        if (file == null || !file.isFile()) {
+            throw new IllegalArgumentException("The provided DocumentFile is invalid or not a file.");
+        }
+
+        Uri fileUri = file.getUri();
+        ContentResolver contentResolver = this.context.getContentResolver();
+
+        try (InputStream inputStream = contentResolver.openInputStream(fileUri);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+
+            // Read the CSV content into a string
+            StringBuilder jsonBuilder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                jsonBuilder.append(line).append('\n');
+            }
+
+            // Parse the JSON string into the desired type using Gson
+            Log.i(LOG_PREFIX, "Parsing " + file.getName() + "...");
+            return parser.parse(jsonBuilder.toString());
+
+        } catch (IOException e) {
+            Log.e(LOG_PREFIX, "Exception while trying to read the file " + file.getName(), e);
+            return null; // Return null in case of an error
+        }
+    }
+
     protected <T> List<T> parseJsonFiles(DocumentFile root, @Nullable Pattern folderMatch, Pattern fileMatch, Class<T> outObjectType) {
         List<T> r = new ArrayList<>();
 
@@ -178,12 +214,31 @@ public class SamsungHealthDiskSystem {
         ).stream().flatMap(Arrays::stream).toArray(HeartRateAndRRInterval[]::new);
     }
 
-    private HeartRateVariation []getHeartRateVariation(@NonNull DocumentFile samsungHealth) {
+    private HeartRateVariation [] getHeartRateVariationParsedFiles(@NonNull DocumentFile samsungHealth) {
         return this.parseJsonFiles(
                 this.getJsonsFolder(samsungHealth),
                 Pattern.compile("^com\\.samsung\\.health\\.hrv$"),
                 Pattern.compile("\\.json$"),
                 HeartRateVariation[].class
         ).stream().flatMap(Arrays::stream).toArray(HeartRateVariation[]::new);
+    }
+
+    private com.miranda1000.samsunghealthexporter.jsons.SleepStage []getSleepStageParsedFiles(@NonNull DocumentFile samsungHealth) {
+        DocumentFile sleepStagesCsv = null;
+        Pattern sleepStagesCsvPattern = Pattern.compile("^com\\.samsung\\.health\\.sleep_stage\\.\\d+\\.csv$");
+        for (DocumentFile entry : samsungHealth.listFiles()) {
+            if (entry.isFile()) {
+                Matcher m = sleepStagesCsvPattern.matcher(entry.getName());
+                if (m.find()) sleepStagesCsv = entry;
+            }
+        }
+
+        if (sleepStagesCsv == null) return new com.miranda1000.samsunghealthexporter.jsons.SleepStage[]{};
+
+        SleepStageCsvParser sleepStageCsvParser = new SleepStageCsvParser();
+        return this.parseCsvFile(
+                sleepStagesCsv,
+                sleepStageCsvParser
+        );
     }
 }

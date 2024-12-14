@@ -10,12 +10,8 @@ import static org.junit.Assert.*;
 
 public class SamsungCsvParserShould {
     private class SamsungCsvParserWrapper extends SamsungCsvParser<Object> {
-        public SamsungCsvParserWrapper(String contents) {
-            super(contents);
-        }
-
         @Override
-        protected Object[] parseDataToObject() {
+        protected Object[] parseDataToObject(ArrayList<HashMap<String,String>> data) {
             return null;
         }
     }
@@ -24,12 +20,12 @@ public class SamsungCsvParserShould {
     public void parseASamsungCsv() throws Exception {
         String in = "the first line should always be ignored\n" +
                 "line1,line2\n" +
-                "2,we specify an extra coma here," +
-                "0,,";
+                "2,we specify an extra coma here,\n" +
+                "0,,\n";
 
-        SamsungCsvParserWrapper parser = new SamsungCsvParserWrapper(in);
+        SamsungCsvParserWrapper parser = new SamsungCsvParserWrapper();
 
-        ArrayList<HashMap<String,String>> data = parser.getRawData();
+        ArrayList<HashMap<String,String>> data = parser.parseCsvToData(in);
         assertEquals(2, data.size());
         assertEquals(2, data.get(0).size());
         assertEquals(2, data.get(1).size());
@@ -45,31 +41,29 @@ public class SamsungCsvParserShould {
 
     @Test
     public void notCrashOnEmptyFiles() throws Exception {
-        SamsungCsvParserWrapper parser = new SamsungCsvParserWrapper("");
-        parser.getRawData();
+        SamsungCsvParserWrapper parser = new SamsungCsvParserWrapper();
+        parser.parseCsvToData("");
 
-        parser = new SamsungCsvParserWrapper("metadata\n");
-        parser.getRawData();
+        parser = new SamsungCsvParserWrapper();
+        parser.parseCsvToData("metadata\n");
     }
 
     @Test
     public void notCrashOnEmptyRows() throws Exception {
-        SamsungCsvParserWrapper parser = new SamsungCsvParserWrapper("metadata\ndata\n");
-        ArrayList<HashMap<String,String>> data = parser.getRawData();
+        SamsungCsvParserWrapper parser = new SamsungCsvParserWrapper();
+        ArrayList<HashMap<String,String>> data = parser.parseCsvToData("metadata\ndata\n");
         assertEquals(0, data.size());
     }
 
     @Test
     public void provideVerboseErrorData() throws Exception {
-        SamsungCsvParserWrapper parser = new SamsungCsvParserWrapper("metadata\ndata\nasd,extra,");
+        SamsungCsvParserWrapper parser = new SamsungCsvParserWrapper();
         try {
-            ArrayList<HashMap<String,String>> data = parser.getRawData();
+            ArrayList<HashMap<String,String>> data = parser.parseCsvToData("metadata\ndata\nasd,extra,");
             fail("Shouldn't reach; exception raised was expected to occur");
         } catch (IOException ex) {
             // include failed line
             assertTrue("Expected to include line on error msg; got otherwise instead.\nerror: " + ex.toString(), ex.getMessage().contains("line 3"));
-            // include failed file (in this case, unspecified)
-            assertTrue("Expected to include file name on error msg; got otherwise instead.\nerror: " + ex.toString(), ex.getMessage().contains("file ?"));
             // include failed row
             assertTrue("Expected to include failed line on error msg; got otherwise instead.\nerror: " + ex.toString(), ex.getMessage().contains("asd,extra"));
             // include header

@@ -134,12 +134,50 @@ public class SamsungHealthMySQLDatabase implements SamsungHealthDatabase {
     }
 
     public void createSleepStageTable() throws Exception {
-        throw new NotImplementedException();
+        String query = "CREATE TABLE IF NOT EXISTS SleepStage (\n"
+                            + "time BIGINT PRIMARY KEY,\n"
+                            + "phase ENUM('Awake', 'REM', 'Light', 'Heavy') NOT NULL\n"
+                        + ")";
+        this.ddbb_connection.prepareStatement(query)
+                .execute();
     }
 
     @Override
     public void exportSleepStage(SleepStage[] sleepStages) throws Exception {
-        throw new NotImplementedException();
+        this.createSleepStageTable();
+
+        // discard already pushed values
+        String send_since_query = "SELECT IFNULL(MAX(time), -1) FROM SleepStage";
+        java.sql.Statement st = this.ddbb_connection.createStatement();
+        java.sql.ResultSet rs = st.executeQuery(send_since_query);
+        if (!rs.next()) throw new SQLException("Couldn't select max time of sleep stages values");
+        final Instant maxInsertedTimestamp = (rs.getLong(1) == -1) ? null : Instant.ofEpochMilli(rs.getLong(1));
+
+        if (maxInsertedTimestamp != null) {
+            // we have data inserted; insert only the new one
+            sleepStages = Arrays.stream(sleepStages)
+                    .filter(ss -> ss.getTime().compareTo(maxInsertedTimestamp) > 0)
+                    .toArray(SleepStage[]::new);
+        }
+
+        Log.i(LOG_PREFIX, "Exporting sleep info... (" + sleepStages.length + " entries)");
+
+        // add new values
+        String insert_query = "INSERT INTO SleepStage(time, phase) VALUES (?,?)";
+        PreparedStatement statement = this.ddbb_connection.prepareStatement(insert_query);
+        final int BATCH_SIZE = 1000;
+        for (int i = 0; i < sleepStages.length; i++) {
+            SleepStage current = sleepStages[i];
+            statement.setLong(1, (current.getTime().getEpochSecond() * 1_000L) + (current.getTime().getNano() / 1_000_000L));
+            statement.setString(2, current.getSleepPhase().toString());
+            statement.addBatch();
+
+            if (i % BATCH_SIZE == BATCH_SIZE - 1) {
+                statement.executeBatch();
+                statement.clearBatch();
+            }
+        }
+        if (sleepStages.length % BATCH_SIZE != 0) statement.executeBatch();
     }
 
     public void createTemperatureTable() throws Exception {

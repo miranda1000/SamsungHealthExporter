@@ -23,8 +23,8 @@ public class SleepInformationCsvParserShould {
                 ",97.0,43,107,5,3,32,639,100,0,0,,,0,720000,0,162,,-1,660000,9,99.0,,10.0,,,,,,,8,338,94.0,79,639,2,100013,2024-12-02 22:38:00.000,," +
                         "62820030,2024-12-03 09:32:09.185,2024-12-03 09:17:00.000,UTC+0100,cZ0NQTEuC7,,com.sec.android.app.shealth,2024-12-03 09:17:00.000,00000193-8991-b09a-5704-bca080861961,\n";
 
-        SleepInformationCsvParser parser = new SleepInformationCsvParser(in);
-        SleepInformation []sleepInformations = parser.parse();
+        SleepInformationCsvParser parser = new SleepInformationCsvParser();
+        SleepInformation []sleepInformations = parser.parse(in);
 
         assertEquals(2, sleepInformations.length);
         assertEquals(Instant.parse("2024-12-02T15:00:00.00Z"), sleepInformations[0].start_time);

@@ -15,7 +15,7 @@ public class GivenAnOpenMySQLDatabaseThenSamsungHealthMySQLDatabaseShould {
     private static final String ip = "192.168.1.80";
     private static final String username = "root",
                                 password = "admin";
-    private static final String ddbbName = "health"; //"health-it";
+    private static final String ddbbName = "health-it";
 
     @Test
     public void connectToTheDatabase() throws Exception {

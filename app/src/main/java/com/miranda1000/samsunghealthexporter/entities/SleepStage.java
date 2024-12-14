@@ -1,21 +1,16 @@
 package com.miranda1000.samsunghealthexporter.entities;
 
-public enum SleepStage {
-    AWAKE(40001),
-    REM(40002),
-    LIGHT(40003),
-    HEAVY(40004);
+import java.time.Instant;
 
-    private int val;
-    SleepStage(int val) {
-        this.val = val;
+public class SleepStage extends SamsungHealthData {
+    private final SleepPhase phase;
+
+    public SleepStage(Instant time, SleepPhase phase) {
+        super(time);
+        this.phase = phase;
     }
 
-    public static SleepStage getFromValue(int val) {
-        for (SleepStage stage : SleepStage.values()) {
-            if (stage.val == val) return stage;
-        }
-
-        throw new IllegalArgumentException("Value '" + val + "' was not found in sleep phases list");
+    public SleepPhase getSleepPhase() {
+        return this.phase;
     }
 }

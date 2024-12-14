@@ -12,73 +12,61 @@ import java.util.Scanner;
  * and each data row is having an extra comma at the end.
  */
 public abstract class SamsungCsvParser<T> {
-    private final File csv;
-    private String csvContents;
-    protected ArrayList<HashMap<String,String>> data;
+    private final String splitChar;
 
-    public SamsungCsvParser(File csv) {
-        this.csv = csv;
+    public SamsungCsvParser(char splitChar) {
+        this.splitChar = String.valueOf(splitChar);
     }
 
-    public SamsungCsvParser(String contents) {
-        this.csv = null;
-        this.csvContents = contents;
+    public SamsungCsvParser() {
+        this(',');
     }
 
-    public T []parse() throws IOException {
-        this.getRawData(); // ignore the result; just trigger the read file
-        return this.parseDataToObject();
+    public T []parse(String csvContents) throws IOException {
+        ArrayList<HashMap<String,String>> rawData = this.parseCsvToData(csvContents);
+        return this.parseDataToObject(rawData);
     }
 
     /**
      * Converts the read file into the data array
      */
-    protected void parseCsvToData() throws IOException {
-        this.data = new ArrayList<>();
+    protected ArrayList<HashMap<String,String>> parseCsvToData(String csvContents) throws IOException {
+        ArrayList<HashMap<String,String>> data = new ArrayList<>();
 
-        if (this.csvContents == null) {
-            StringBuilder sb = new StringBuilder();
-            try (Scanner reader = new Scanner(this.csv)) {
-                while (reader.hasNextLine()) sb.append(reader.nextLine()).append('\n');
-            }
-            this.csvContents = sb.toString();
-        }
-
-        String []fileContents = this.csvContents.split("\n");
+        String []fileContents = csvContents.split("\n");
         int index = 1; // discard first row
 
         // read header
         String header = fileContents.length > index ? fileContents[index++] : "";
-        String []columns = header.split(";");
+        String []columns = header.split(this.splitChar);
 
         // read the rows
         while (fileContents.length > index) {
             String row = fileContents[index].trim();
             if (row.isEmpty()) continue; // empty
 
-            String []arguments = row.split(";");
+            String []arguments = row.split(this.splitChar, -1);
             if (arguments.length != columns.length+1) {
-                throw new IOException("Failed reading file " + (this.csv != null ? this.csv.getName() : "?") + ": line " + (index+1) + " with different amount of parameters; " +
+                throw new IOException("Failed parsing file: line " + (index+1) + " with different amount of parameters; " +
                         "expected " + columns.length + " got " + (arguments.length-1) + ".\nExtra information:\n\theader: " + header +
                         "\n\trow: " + row);
             }
 
+            HashMap<String,String> rowData = new HashMap<>();
+            for (int colNum = 0; colNum < columns.length; colNum++) {
+                rowData.put(columns[colNum], arguments[colNum]);
+            }
+            data.add(rowData);
+
             index++;
         }
+
+        return data;
     }
 
     /**
      * Converts the data array into a list of desired objects
      * @return List of parsed objects
      */
-    protected abstract T []parseDataToObject();
-
-    public ArrayList<HashMap<String,String>> getRawData() throws IOException {
-        if (this.data == null) {
-            // we must first get the data
-            this.parseCsvToData();
-        }
-
-        return this.data;
-    }
+    protected abstract T []parseDataToObject(ArrayList<HashMap<String,String>> rawData);
 }
