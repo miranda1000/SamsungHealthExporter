@@ -30,7 +30,7 @@ public class SamsungHealthJsonParser {
         return result;
     }
 
-    public BreathRate []parseRespiratoryRate(RespiratoryRate[]respiratoryRates) {
+    public BreathRate []parseRespiratoryRate(RespiratoryRate []respiratoryRates) {
         BreathRate[]result = new BreathRate[respiratoryRates.length];
 
         for (int n = 0; n < result.length; n++) {

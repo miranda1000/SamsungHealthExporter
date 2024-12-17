@@ -12,9 +12,13 @@ import androidx.documentfile.provider.DocumentFile;
 import com.google.gson.Gson;
 import com.miranda1000.samsunghealthexporter.csv_parser.SamsungCsvParser;
 import com.miranda1000.samsunghealthexporter.csv_parser.SleepStageCsvParser;
+import com.miranda1000.samsunghealthexporter.entities.BreathRate;
 import com.miranda1000.samsunghealthexporter.entities.SleepStage;
+import com.miranda1000.samsunghealthexporter.entities.Temperature;
 import com.miranda1000.samsunghealthexporter.jsons.HeartRateAndRRInterval;
 import com.miranda1000.samsunghealthexporter.jsons.HeartRateVariation;
+import com.miranda1000.samsunghealthexporter.jsons.RespiratoryRate;
+import com.miranda1000.samsunghealthexporter.jsons.SkinTemperature;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -91,6 +95,30 @@ public class SamsungHealthDiskSystem {
         // already sorted
         return this.samsungHealthJsonParser.parseSleepStage(
                 this.getSleepStageParsedFiles(samsungHealth)
+        );
+    }
+
+    public BreathRate []extractBreathRate(@NonNull DocumentFile samsungHealth) {
+        return this.samsungHealthJsonParser.sortByTime(
+                this.samsungHealthJsonParser.parseRespiratoryRate(
+                        this.getRespiratoryRateParsedFiles(samsungHealth)
+                )
+        );
+    }
+
+    public com.miranda1000.samsunghealthexporter.entities.OxygenSaturation []extractOxygenSaturation(@NonNull DocumentFile samsungHealth) {
+        return this.samsungHealthJsonParser.sortByTime(
+                this.samsungHealthJsonParser.parseOxygenSaturation(
+                        this.getOxygenSaturationParsedFiles(samsungHealth)
+                )
+        );
+    }
+
+    public Temperature []extractTemperature(@NonNull DocumentFile samsungHealth) {
+        return this.samsungHealthJsonParser.sortByTime(
+                this.samsungHealthJsonParser.parseSkinTemperature(
+                        this.getSkinTemperatureParsedFiles(samsungHealth)
+                )
         );
     }
 
@@ -240,5 +268,32 @@ public class SamsungHealthDiskSystem {
                 sleepStagesCsv,
                 sleepStageCsvParser
         );
+    }
+
+    private RespiratoryRate []getRespiratoryRateParsedFiles(@NonNull DocumentFile samsungHealth) {
+        return this.parseJsonFiles(
+                this.getJsonsFolder(samsungHealth),
+                Pattern.compile("^com\\.samsung\\.health\\.respiratory_rate$"),
+                Pattern.compile("\\.json$"),
+                RespiratoryRate[].class
+        ).stream().flatMap(Arrays::stream).toArray(RespiratoryRate[]::new);
+    }
+
+    private com.miranda1000.samsunghealthexporter.jsons.OxygenSaturation []getOxygenSaturationParsedFiles(@NonNull DocumentFile samsungHealth) {
+        return this.parseJsonFiles(
+                this.getJsonsFolder(samsungHealth),
+                Pattern.compile("^com\\.samsung\\.shealth\\.tracker\\.oxygen_saturation$"),
+                Pattern.compile("\\.json$"),
+                com.miranda1000.samsunghealthexporter.jsons.OxygenSaturation[].class
+        ).stream().flatMap(Arrays::stream).toArray(com.miranda1000.samsunghealthexporter.jsons.OxygenSaturation[]::new);
+    }
+
+    private SkinTemperature []getSkinTemperatureParsedFiles(@NonNull DocumentFile samsungHealth) {
+        return this.parseJsonFiles(
+                this.getJsonsFolder(samsungHealth),
+                Pattern.compile("^com\\.samsung\\.health\\.skin_temperature$"),
+                Pattern.compile("\\.json$"),
+                SkinTemperature[].class
+        ).stream().flatMap(Arrays::stream).toArray(SkinTemperature[]::new);
     }
 }

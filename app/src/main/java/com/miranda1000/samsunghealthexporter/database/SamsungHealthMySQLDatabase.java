@@ -2,7 +2,6 @@ package com.miranda1000.samsunghealthexporter.database;
 
 import android.util.Log;
 
-import com.miranda1000.samsunghealthexporter.NotImplementedException;
 import com.miranda1000.samsunghealthexporter.entities.*;
 
 import java.sql.DriverManager;
@@ -59,12 +58,51 @@ public class SamsungHealthMySQLDatabase implements SamsungHealthDatabase {
     }
 
     public void createBreathRateTable() throws Exception {
-        throw new NotImplementedException();
+        String query = "CREATE TABLE IF NOT EXISTS BreathRate (\n"
+                + "time BIGINT PRIMARY KEY,\n"
+                + "respiratory_rate FLOAT NOT NULL\n"
+                + ")";
+        this.ddbb_connection.prepareStatement(query)
+                .execute();
     }
 
     @Override
     public void exportBreathRate(BreathRate[] breathRates) throws Exception {
-        throw new NotImplementedException();
+        if (!this.isConnected()) this.connect();
+        this.createBreathRateTable(); // just in case it's the first time
+
+        // discard already pushed values
+        String send_since_query = "SELECT IFNULL(MAX(time), -1) FROM BreathRate";
+        java.sql.Statement st = this.ddbb_connection.createStatement();
+        java.sql.ResultSet rs = st.executeQuery(send_since_query);
+        if (!rs.next()) throw new SQLException("Couldn't select max time of sleep stages values");
+        final Instant maxInsertedTimestamp = (rs.getLong(1) == -1) ? null : Instant.ofEpochMilli(rs.getLong(1));
+
+        if (maxInsertedTimestamp != null) {
+            // we have data inserted; insert only the new one
+            breathRates = Arrays.stream(breathRates)
+                    .filter(ss -> ss.getTime().compareTo(maxInsertedTimestamp) > 0)
+                    .toArray(BreathRate[]::new);
+        }
+
+        Log.i(LOG_PREFIX, "Exporting breath info... (" + breathRates.length + " entries)");
+
+        // add new values
+        String insert_query = "INSERT INTO BreathRate(time, respiratory_rate) VALUES (?,?)";
+        PreparedStatement statement = this.ddbb_connection.prepareStatement(insert_query);
+        final int BATCH_SIZE = 1000;
+        for (int i = 0; i < breathRates.length; i++) {
+            BreathRate current = breathRates[i];
+            statement.setLong(1, (current.getTime().getEpochSecond() * 1_000L) + (current.getTime().getNano() / 1_000_000L));
+            statement.setFloat(2, current.getRespiratoryRate());
+            statement.addBatch();
+
+            if (i % BATCH_SIZE == BATCH_SIZE - 1) {
+                statement.executeBatch();
+                statement.clearBatch();
+            }
+        }
+        if (breathRates.length % BATCH_SIZE != 0) statement.executeBatch();
     }
 
     public void createHeartRateTable() throws Exception {
@@ -125,12 +163,52 @@ public class SamsungHealthMySQLDatabase implements SamsungHealthDatabase {
     }
 
     public void createOxygenSaturationTable() throws Exception {
-        throw new NotImplementedException();
+        String query = "CREATE TABLE IF NOT EXISTS OxygenSaturation (\n"
+                + "time BIGINT PRIMARY KEY,\n"
+                + "oxygen_in_blood FLOAT NOT NULL\n"
+                + ")";
+        this.ddbb_connection.prepareStatement(query)
+                .execute();
     }
 
     @Override
     public void exportOxygenSaturation(OxygenSaturation[] oxygenSaturations) throws Exception {
-        throw new NotImplementedException();
+        if (!this.isConnected()) this.connect();
+        this.createOxygenSaturationTable(); // just in case it's the first time
+
+
+        // discard already pushed values
+        String send_since_query = "SELECT IFNULL(MAX(time), -1) FROM OxygenSaturation";
+        java.sql.Statement st = this.ddbb_connection.createStatement();
+        java.sql.ResultSet rs = st.executeQuery(send_since_query);
+        if (!rs.next()) throw new SQLException("Couldn't select max time of sleep stages values");
+        final Instant maxInsertedTimestamp = (rs.getLong(1) == -1) ? null : Instant.ofEpochMilli(rs.getLong(1));
+
+        if (maxInsertedTimestamp != null) {
+            // we have data inserted; insert only the new one
+            oxygenSaturations = Arrays.stream(oxygenSaturations)
+                    .filter(ss -> ss.getTime().compareTo(maxInsertedTimestamp) > 0)
+                    .toArray(OxygenSaturation[]::new);
+        }
+
+        Log.i(LOG_PREFIX, "Exporting oxygen info... (" + oxygenSaturations.length + " entries)");
+
+        // add new values
+        String insert_query = "INSERT INTO OxygenSaturation(time, oxygen_in_blood) VALUES (?,?)";
+        PreparedStatement statement = this.ddbb_connection.prepareStatement(insert_query);
+        final int BATCH_SIZE = 1000;
+        for (int i = 0; i < oxygenSaturations.length; i++) {
+            OxygenSaturation current = oxygenSaturations[i];
+            statement.setLong(1, (current.getTime().getEpochSecond() * 1_000L) + (current.getTime().getNano() / 1_000_000L));
+            statement.setFloat(2, current.getOxygenInBlood());
+            statement.addBatch();
+
+            if (i % BATCH_SIZE == BATCH_SIZE - 1) {
+                statement.executeBatch();
+                statement.clearBatch();
+            }
+        }
+        if (oxygenSaturations.length % BATCH_SIZE != 0) statement.executeBatch();
     }
 
     public void createSleepStageTable() throws Exception {
@@ -144,7 +222,8 @@ public class SamsungHealthMySQLDatabase implements SamsungHealthDatabase {
 
     @Override
     public void exportSleepStage(SleepStage[] sleepStages) throws Exception {
-        this.createSleepStageTable();
+        if (!this.isConnected()) this.connect();
+        this.createSleepStageTable(); // just in case it's the first time
 
         // discard already pushed values
         String send_since_query = "SELECT IFNULL(MAX(time), -1) FROM SleepStage";
@@ -181,11 +260,50 @@ public class SamsungHealthMySQLDatabase implements SamsungHealthDatabase {
     }
 
     public void createTemperatureTable() throws Exception {
-        throw new NotImplementedException();
+        String query = "CREATE TABLE IF NOT EXISTS Temperature (\n"
+                + "time BIGINT PRIMARY KEY,\n"
+                + "temperature FLOAT NOT NULL\n"
+                + ")";
+        this.ddbb_connection.prepareStatement(query)
+                .execute();
     }
 
     @Override
     public void exportTemperature(Temperature[] temperatures) throws Exception {
-        throw new NotImplementedException();
+        if (!this.isConnected()) this.connect();
+        this.createTemperatureTable(); // just in case it's the first time
+
+        // discard already pushed values
+        String send_since_query = "SELECT IFNULL(MAX(time), -1) FROM Temperature";
+        java.sql.Statement st = this.ddbb_connection.createStatement();
+        java.sql.ResultSet rs = st.executeQuery(send_since_query);
+        if (!rs.next()) throw new SQLException("Couldn't select max time of sleep stages values");
+        final Instant maxInsertedTimestamp = (rs.getLong(1) == -1) ? null : Instant.ofEpochMilli(rs.getLong(1));
+
+        if (maxInsertedTimestamp != null) {
+            // we have data inserted; insert only the new one
+            temperatures = Arrays.stream(temperatures)
+                    .filter(ss -> ss.getTime().compareTo(maxInsertedTimestamp) > 0)
+                    .toArray(Temperature[]::new);
+        }
+
+        Log.i(LOG_PREFIX, "Exporting temperature info... (" + temperatures.length + " entries)");
+
+        // add new values
+        String insert_query = "INSERT INTO Temperature(time, temperature) VALUES (?,?)";
+        PreparedStatement statement = this.ddbb_connection.prepareStatement(insert_query);
+        final int BATCH_SIZE = 1000;
+        for (int i = 0; i < temperatures.length; i++) {
+            Temperature current = temperatures[i];
+            statement.setLong(1, (current.getTime().getEpochSecond() * 1_000L) + (current.getTime().getNano() / 1_000_000L));
+            statement.setFloat(2, current.getTemperature());
+            statement.addBatch();
+
+            if (i % BATCH_SIZE == BATCH_SIZE - 1) {
+                statement.executeBatch();
+                statement.clearBatch();
+            }
+        }
+        if (temperatures.length % BATCH_SIZE != 0) statement.executeBatch();
     }
 }

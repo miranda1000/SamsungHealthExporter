@@ -19,8 +19,11 @@ import androidx.documentfile.provider.DocumentFile;
 
 import com.miranda1000.samsunghealthexporter.database.SamsungHealthDatabase;
 import com.miranda1000.samsunghealthexporter.database.SamsungHealthMySQLDatabase;
+import com.miranda1000.samsunghealthexporter.entities.BreathRate;
 import com.miranda1000.samsunghealthexporter.entities.HeartRate;
+import com.miranda1000.samsunghealthexporter.entities.OxygenSaturation;
 import com.miranda1000.samsunghealthexporter.entities.SleepStage;
+import com.miranda1000.samsunghealthexporter.entities.Temperature;
 
 import java.util.Arrays;
 
@@ -107,11 +110,31 @@ public class MainActivity extends AppCompatActivity {
 
     public boolean exportInformation(@NonNull DocumentFile latestExport) {
         try {
-            HeartRate[] extractHeartRate = this.samsungHealthDiskSystem.extractHeartRate(latestExport);
-            this.samsungHealthDatabase.exportHeartRate(extractHeartRate);
+            // reduce context to reduce memory usage
+            {
+                HeartRate[] extractHeartRate = this.samsungHealthDiskSystem.extractHeartRate(latestExport);
+                this.samsungHealthDatabase.exportHeartRate(extractHeartRate);
+            }
 
-            SleepStage[] extractSleepStage = this.samsungHealthDiskSystem.extractSleepStage(latestExport);
-            this.samsungHealthDatabase.exportSleepStage(extractSleepStage);
+            {
+                SleepStage[] extractSleepStage = this.samsungHealthDiskSystem.extractSleepStage(latestExport);
+                this.samsungHealthDatabase.exportSleepStage(extractSleepStage);
+            }
+
+            {
+                BreathRate[] extractBreathRates = this.samsungHealthDiskSystem.extractBreathRate(latestExport);
+                this.samsungHealthDatabase.exportBreathRate(extractBreathRates);
+            }
+
+            {
+                OxygenSaturation[] extractOxygenSaturations = this.samsungHealthDiskSystem.extractOxygenSaturation(latestExport);
+                this.samsungHealthDatabase.exportOxygenSaturation(extractOxygenSaturations);
+            }
+
+            {
+                Temperature[] extractTemperatures = this.samsungHealthDiskSystem.extractTemperature(latestExport);
+                this.samsungHealthDatabase.exportTemperature(extractTemperatures);
+            }
 
             return true;
         } catch (Exception ex) {

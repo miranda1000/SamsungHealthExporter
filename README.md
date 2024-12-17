@@ -14,13 +14,11 @@ The data to include is:
 - Stress [TODO]
 - Respiratory rate
 - Sleep information
-  - Hours of sleep [TODO]
-  - Physical recuperation [TODO]
-  - Relaxing [TODO]
-  - Mental recuperation [TODO]
-  - Sleep cycles [TODO]
-  - Sleep phases [TODO]
+  - Sleep phases
   - Movement during sleep [TODO]
+  - Physical recuperation [TODO]
+  - Mental recuperation [TODO]
+  - Relaxing [TODO]
 
 Also, you'll have this features:
 - Multiple database models to choose [TODO; for now only MySQL]
@@ -30,9 +28,11 @@ Also, you'll have this features:
 ## (more) TODO list
 - Export progress bar
 - Specify latest export time
-- Change DDBB connection from the APP
+- Change DDBB connection from within the APP
 - Guide for the user on how to export SamsungHealth data
 - An app icon
+- Optimization: discard data at first if it's older instead of parsing all then discarding
+- Lock rotation
 
 ## Database preparations
 
@@ -51,4 +51,16 @@ FROM HeartRate;
 CREATE VIEW SleepStageHumanTime AS
 SELECT from_unixtime(SleepStage.time / 1000, '%Y-%m-%d %H:%i:%s') as `time`, phase
 FROM SleepStage;
+
+CREATE VIEW BreathRateHumanTime AS
+SELECT from_unixtime(BreathRate.time / 1000, '%Y-%m-%d %H:%i:%s') as `time`, respiratory_rate
+FROM BreathRate;
+
+CREATE VIEW OxygenSaturationHumanTime AS
+SELECT from_unixtime(OxygenSaturation.time / 1000, '%Y-%m-%d %H:%i:%s') as `time`, oxygen_in_blood
+FROM OxygenSaturation;
+
+CREATE VIEW TemperatureHumanTime AS
+SELECT from_unixtime(Temperature.time / 1000, '%Y-%m-%d %H:%i:%s') as `time`, temperature
+FROM Temperature;
 ```
